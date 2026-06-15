@@ -14,6 +14,9 @@ import AlertSilencing from './components/AlertSilencing';
 import SLOSubscription from './components/SLOSubscription';
 import MetricsBackendManager from './components/MetricsBackendManager';
 import CustomDashboardView from './components/CustomDashboardView';
+import AlertStormCluster from './components/AlertStormCluster';
+import ViewSharing from './components/ViewSharing';
+import CrossTeamSLO from './components/CrossTeamSLO';
 import { 
   statisticsData, 
   customerGroupData, 
@@ -32,6 +35,11 @@ import {
   subscriptions,
   dashboardViews,
   availableWidgets,
+  rawStormAlerts,
+  alertClusters,
+  viewShares,
+  crossTeamSLOData,
+  users,
 } from './data/mockData';
 
 function DashboardContent() {
@@ -59,12 +67,15 @@ function DashboardContent() {
   const tabs = [
     { id: 'overview', name: '📊 总览', permission: 'view_dashboard' },
     { id: 'slo', name: '🎯 SLO & 错误预算', permission: 'view_dashboard' },
+    { id: 'cross-team', name: '🏢 跨团队 SLO', permission: 'view_teams' },
     { id: 'alerts', name: '🔔 告警管理', permission: 'configure_alerts' },
+    { id: 'storm', name: '🌪️ 告警风暴聚类', permission: 'configure_alerts' },
     { id: 'subscriptions', name: '📩 订阅推送', permission: 'export_reports' },
     { id: 'dependencies', name: '🔗 服务依赖', permission: 'view_dependencies' },
     { id: 'history', name: '⏮️ 历史回放', permission: 'replay_history' },
     { id: 'backends', name: '🔌 数据源', permission: 'view_all' },
     { id: 'views', name: '🎛️ 视图管理', permission: 'view_dashboard' },
+    { id: 'sharing', name: '🔗 视图共享', permission: 'view_dashboard' },
     { id: 'teams', name: '👥 团队权限', permission: 'view_teams' },
     { id: 'export', name: '📄 导出报告', permission: 'export_reports' },
   ].filter(tab => hasPermission(tab.permission));
@@ -171,8 +182,14 @@ function DashboardContent() {
       case 'slo':
         return <SLOBudget sloData={sloData} burnRateData={burnRateData} />;
       
+      case 'cross-team':
+        return <CrossTeamSLO crossTeamData={crossTeamSLOData} />;
+      
       case 'alerts':
         return <AlertSilencing alertRules={alertRules} activeAlerts={activeAlerts} />;
+      
+      case 'storm':
+        return <AlertStormCluster rawAlerts={rawStormAlerts} clusters={alertClusters} />;
       
       case 'subscriptions':
         return <SLOSubscription subscriptions={subscriptions} />;
@@ -199,6 +216,16 @@ function DashboardContent() {
       
       case 'views':
         return <CustomDashboardView views={dashboardViews} availableWidgets={availableWidgets} />;
+      
+      case 'sharing':
+        return (
+          <ViewSharing
+            initialShares={viewShares}
+            dashboardViews={dashboardViews}
+            teams={teams}
+            users={users}
+          />
+        );
       
       case 'teams':
         return <TeamPermissions teams={teams} />;

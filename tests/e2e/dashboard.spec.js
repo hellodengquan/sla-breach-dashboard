@@ -855,4 +855,296 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     const parentCard = currentBadge.locator('..').locator('..');
     await expect(parentCard).toContainText('Datadog');
   });
+
+  test('56. 跨团队 SLO 报告页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🏢 跨团队 SLO' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByRole('heading', { name: '🏢 跨团队 SLO 报告聚合' })).toBeVisible();
+
+    const summaryItems = page.locator('.cross-team-summary-item');
+    await expect(summaryItems).toHaveCount(5);
+
+    await expect(summaryItems.first().getByText('参评团队')).toBeVisible();
+    await expect(summaryItems.nth(1).getByText('综合达标率')).toBeVisible();
+    await expect(summaryItems.nth(2).getByText('达标团队')).toBeVisible();
+  });
+
+  test('57. 跨团队 SLO 排名视图展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🏢 跨团队 SLO' }).click();
+    await page.waitForTimeout(500);
+
+    const rankingItems = page.locator('.ranking-item');
+    await expect(rankingItems).toHaveCount(5);
+
+    await expect(rankingItems.first()).toContainText('产品研发团队');
+    await expect(rankingItems.nth(1)).toContainText('技术支持团队');
+
+    const rankingBadges = page.locator('.ranking-badge');
+    await expect(rankingBadges.first()).toContainText('🥇');
+    await expect(rankingBadges.nth(1)).toContainText('🥈');
+    await expect(rankingBadges.nth(2)).toContainText('🥉');
+  });
+
+  test('58. 跨团队 SLO 趋势视图切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🏢 跨团队 SLO' }).click();
+    await page.waitForTimeout(500);
+
+    const trendTab = page.locator('.cross-team-tabs').getByRole('button', { name: '📊 趋势对比' });
+    await expect(trendTab).toBeVisible();
+    await trendTab.click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText(/各团队 SLA 达标率趋势对比/)).toBeVisible();
+
+    const detailTab = page.locator('.cross-team-tabs').getByRole('button', { name: '📋 团队明细' });
+    await detailTab.click();
+    await page.waitForTimeout(300);
+
+    const teamCards = page.locator('.team-detail-card');
+    await expect(teamCards).toHaveCount(5);
+
+    await expect(teamCards.first()).toContainText('错误预算');
+    await expect(teamCards.first()).toContainText('响应时间');
+    await expect(teamCards.first()).toContainText('工单处理');
+  });
+
+  test('59. 跨团队 SLO 点击排名跳转明细测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🏢 跨团队 SLO' }).click();
+    await page.waitForTimeout(500);
+
+    const firstRanking = page.locator('.ranking-item').first();
+    await firstRanking.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.team-detail-header')).toBeVisible();
+    await expect(page.locator('.team-detail-header')).toContainText('产品研发团队');
+
+    const backButton = page.locator('.team-detail-header').getByRole('button', { name: '← 返回全部' });
+    await backButton.click();
+    await page.waitForTimeout(300);
+
+    const teamCards = page.locator('.team-detail-card');
+    await expect(teamCards).toHaveCount(5);
+  });
+
+  test('60. 告警风暴聚类页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🌪️ 告警风暴聚类' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByRole('heading', { name: '🌪️ 告警风暴聚类与去重' })).toBeVisible();
+
+    const stormStats = page.locator('.storm-stat-item');
+    await expect(stormStats).toHaveCount(4);
+
+    await expect(stormStats.first()).toContainText('原始告警数');
+    await expect(stormStats.nth(1)).toContainText('聚类数量');
+    await expect(stormStats.nth(2)).toContainText('活动聚类');
+    await expect(stormStats.nth(3)).toContainText('去重压缩率');
+  });
+
+  test('61. 告警聚类列表展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🌪️ 告警风暴聚类' }).click();
+    await page.waitForTimeout(500);
+
+    const clusterCards = page.locator('.cluster-card');
+    await expect(clusterCards).toHaveCount(4);
+
+    await expect(clusterCards.first()).toContainText('SLA 违约率超标');
+    await expect(clusterCards.first()).toContainText('ticket-service');
+
+    const countBadges = page.locator('.cluster-count-badge');
+    await expect(countBadges.first()).toBeVisible();
+  });
+
+  test('62. 告警聚类状态流转测试（确认→解决）', async ({ page }) => {
+    await page.getByRole('button', { name: '🌪️ 告警风暴聚类' }).click();
+    await page.waitForTimeout(500);
+
+    const firstCluster = page.locator('.cluster-card').first();
+    const ackButton = firstCluster.getByRole('button', { name: '✓ 确认' });
+    
+    if (await ackButton.isVisible()) {
+      await ackButton.click();
+      await page.waitForTimeout(300);
+
+      const resolveButton = firstCluster.getByRole('button', { name: '✅ 解决' });
+      await expect(resolveButton).toBeVisible();
+
+      await resolveButton.click();
+      await page.waitForTimeout(300);
+
+      await expect(firstCluster).toHaveClass(/resolved/);
+    }
+  });
+
+  test('63. 告警聚类标签切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🌪️ 告警风暴聚类' }).click();
+    await page.waitForTimeout(500);
+
+    const rawTab = page.locator('.storm-tabs').getByRole('button', { name: '📋 原始告警' });
+    await rawTab.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.raw-alerts-container')).toBeVisible();
+
+    const rawTable = page.locator('.raw-alerts-container table');
+    await expect(rawTable).toBeVisible();
+
+    const rows = rawTable.locator('tbody tr');
+    const count = await rows.count();
+    expect(count).toBeGreaterThan(0);
+
+    const clusterTab = page.locator('.storm-tabs').getByRole('button', { name: '📦 聚类视图' });
+    await clusterTab.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.cluster-list')).toBeVisible();
+  });
+
+  test('64. 告警聚类明细弹窗测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🌪️ 告警风暴聚类' }).click();
+    await page.waitForTimeout(500);
+
+    const firstCluster = page.locator('.cluster-card').first();
+    const detailButton = firstCluster.getByRole('button', { name: '查看明细' });
+    await detailButton.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.modal-overlay')).toBeVisible();
+    await expect(page.locator('.large-modal')).toBeVisible();
+
+    await expect(page.locator('.cluster-detail-summary')).toBeVisible();
+    await expect(page.getByText('关联原始告警')).toBeVisible();
+
+    const closeButton = page.locator('.modal-close');
+    await closeButton.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.modal-overlay')).not.toBeVisible();
+  });
+
+  test('65. 视图共享页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔗 视图共享' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByRole('heading', { name: '🔗 视图共享与签到追踪' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '+ 创建共享' })).toBeVisible();
+
+    const sharingStats = page.locator('.sharing-stat-item');
+    await expect(sharingStats).toHaveCount(4);
+
+    await expect(sharingStats.nth(0)).toContainText('共享总数');
+    await expect(sharingStats.nth(1)).toContainText('活跃共享');
+    await expect(sharingStats.nth(2)).toContainText('总访问次数');
+    await expect(sharingStats.nth(3)).toContainText('独立用户');
+  });
+
+  test('66. 共享链接列表展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔗 视图共享' }).click();
+    await page.waitForTimeout(500);
+
+    const shareCards = page.locator('.share-card');
+    await expect(shareCards).toHaveCount(3);
+
+    await expect(shareCards.first()).toContainText('默认视图');
+    await expect(shareCards.first()).toContainText('技术支持团队');
+
+    const shareLinks = page.locator('.share-link');
+    await expect(shareLinks.first()).toBeVisible();
+    expect((await shareLinks.first().textContent()) || '').toContain('https://');
+  });
+
+  test('67. 共享标签切换与签到记录测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔗 视图共享' }).click();
+    await page.waitForTimeout(500);
+
+    const signinsTab = page.locator('.sharing-tabs').getByRole('button', { name: '📝 签到记录' });
+    await signinsTab.click();
+    await page.waitForTimeout(300);
+
+    const signinsTable = page.locator('.signins-container table');
+    await expect(signinsTable).toBeVisible();
+
+    const rows = signinsTable.locator('tbody tr');
+    const count = await rows.count();
+    expect(count).toBeGreaterThan(0);
+
+    await expect(rows.first()).toContainText('Chrome');
+    await expect(signinsTable.locator('thead')).toContainText('设备/浏览器');
+  });
+
+  test('68. 创建共享弹窗测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔗 视图共享' }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole('button', { name: '+ 创建共享' }).click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.modal-overlay')).toBeVisible();
+    await expect(page.locator('.create-share-modal')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '创建视图共享' })).toBeVisible();
+
+    const viewSelect = page.locator('.create-share-modal .form-select').first();
+    await viewSelect.selectOption({ label: '运维视图' });
+
+    const teamCheckboxes = page.locator('.team-checkbox-item');
+    await expect(teamCheckboxes).toHaveCount(5);
+
+    await teamCheckboxes.first().click();
+    await expect(teamCheckboxes.first()).toHaveClass(/checked/);
+
+    const createButton = page.getByRole('button', { name: '创建共享链接' });
+    await expect(createButton).toBeVisible();
+
+    await page.getByRole('button', { name: '取消' }).click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.modal-overlay')).not.toBeVisible();
+  });
+
+  test('69. 共享开关切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔗 视图共享' }).click();
+    await page.waitForTimeout(500);
+
+    const firstShare = page.locator('.share-card').first();
+    const toggleSlider = firstShare.locator('.toggle-slider').first();
+    const toggleInput = firstShare.locator('.toggle-switch input').first();
+
+    const initialChecked = await toggleInput.isChecked();
+    await toggleSlider.click();
+    await page.waitForTimeout(300);
+    const afterChecked = await toggleInput.isChecked();
+    expect(afterChecked).not.toBe(initialChecked);
+  });
+
+  test('70. 跨团队场景综合性能测试（模拟多用户切换）', async ({ page }) => {
+    const startTime = Date.now();
+
+    await page.getByRole('button', { name: '🏢 跨团队 SLO' }).click();
+    await page.waitForTimeout(300);
+    const t1 = Date.now() - startTime;
+    expect(t1).toBeLessThan(3000);
+
+    const rankingTab = page.locator('.cross-team-tabs').getByRole('button', { name: '🏆 排名视图' });
+    await rankingTab.click();
+    await page.waitForTimeout(200);
+    const t2 = Date.now() - startTime;
+    expect(t2).toBeLessThan(4000);
+
+    const trendTab = page.locator('.cross-team-tabs').getByRole('button', { name: '📊 趋势对比' });
+    await trendTab.click();
+    await page.waitForTimeout(300);
+    const t3 = Date.now() - startTime;
+    expect(t3).toBeLessThan(5000);
+
+    const detailTab = page.locator('.cross-team-tabs').getByRole('button', { name: '📋 团队明细' });
+    await detailTab.click();
+    await page.waitForTimeout(200);
+
+    const teamCards = page.locator('.team-detail-card');
+    await expect(teamCards).toHaveCount(5);
+
+    const totalTime = Date.now() - startTime;
+    expect(totalTime).toBeLessThan(8000);
+  });
 });

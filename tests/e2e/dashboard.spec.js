@@ -432,15 +432,15 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     await page.getByRole('button', { name: '🔔 告警管理' }).click();
     await page.waitForTimeout(500);
 
-    await expect(page.getByText('🔔 告警管理与 Silencing')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '🔔 告警管理与 Silencing' })).toBeVisible();
 
     const alertStats = page.locator('.alert-stat-item');
     await expect(alertStats).toHaveCount(4);
 
-    await expect(page.getByText('告警规则总数')).toBeVisible();
-    await expect(page.getByText('已启用')).toBeVisible();
-    await expect(page.getByText('已静默')).toBeVisible();
-    await expect(page.getByText('活动告警')).toBeVisible();
+    await expect(page.locator('.alert-stats-row').getByText('告警规则总数')).toBeVisible();
+    await expect(page.locator('.alert-stats-row').getByText('已启用')).toBeVisible();
+    await expect(page.locator('.alert-stats-row').getByText('已静默')).toBeVisible();
+    await expect(page.locator('.alert-stats-row').getByText('活动告警')).toBeVisible();
   });
 
   test('32. 告警规则与活动告警标签切换测试', async ({ page }) => {
@@ -541,12 +541,14 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     await page.getByRole('button', { name: '📩 订阅推送' }).click();
     await page.waitForTimeout(500);
 
-    const toggleSwitches = page.locator('.toggle-switch input');
-    const firstSwitch = toggleSwitches.first();
+    const toggleSliders = page.locator('.toggle-slider');
+    const firstSlider = toggleSliders.first();
     
+    const firstSwitch = page.locator('.toggle-switch input').first();
     const initialChecked = await firstSwitch.isChecked();
     
-    await firstSwitch.click();
+    await firstSlider.click();
+    await page.waitForTimeout(300);
     
     const afterChecked = await firstSwitch.isChecked();
     expect(afterChecked).not.toBe(initialChecked);
@@ -560,7 +562,7 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     await page.waitForTimeout(300);
 
     await expect(page.locator('.modal-overlay')).toBeVisible();
-    await expect(page.getByText('新建订阅')).toBeVisible();
+    await expect(page.locator('.create-sub-modal').getByRole('heading', { name: '新建订阅' })).toBeVisible();
 
     const nameInput = page.locator('.create-sub-modal .form-input').first();
     await nameInput.fill('测试订阅');
@@ -610,9 +612,9 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     await page.getByRole('button', { name: '🔌 数据源' }).click();
     await page.waitForTimeout(500);
 
-    await expect(page.getByText('🔌 多 Metrics Backend 适配')).toBeVisible();
-    await expect(page.getByText(/当前:/)).toBeVisible();
-    await expect(page.getByText('Prometheus')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '🔌 多 Metrics Backend 适配' })).toBeVisible();
+    await expect(page.locator('.backend-stats')).toBeVisible();
+    await expect(page.locator('.backend-card').first().getByRole('heading', { name: 'Prometheus' })).toBeVisible();
   });
 
   test('42. Metrics Backend 列表展示测试', async ({ page }) => {
@@ -622,10 +624,10 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     const backendCards = page.locator('.backend-card');
     await expect(backendCards).toHaveCount(4);
 
-    await expect(page.getByText('Prometheus')).toBeVisible();
-    await expect(page.getByText('Datadog')).toBeVisible();
-    await expect(page.getByText('Grafana Cloud')).toBeVisible();
-    await expect(page.getByText('InfluxDB')).toBeVisible();
+    await expect(backendCards.nth(0).getByRole('heading', { name: 'Prometheus' })).toBeVisible();
+    await expect(backendCards.nth(1).getByRole('heading', { name: 'Datadog' })).toBeVisible();
+    await expect(backendCards.nth(2).getByRole('heading', { name: 'Grafana Cloud' })).toBeVisible();
+    await expect(backendCards.nth(3).getByRole('heading', { name: 'InfluxDB' })).toBeVisible();
   });
 
   test('43. 当前 Backend 标识测试', async ({ page }) => {
@@ -836,9 +838,15 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     const subscriptions = page.locator('.subscription-item');
     await expect(subscriptions).toHaveCount(5);
 
-    const firstToggle = page.locator('.toggle-switch input').first();
-    await firstToggle.click();
+    const firstToggleSlider = page.locator('.toggle-slider').first();
+    const firstToggleInput = page.locator('.toggle-switch input').first();
+    const initialChecked = await firstToggleInput.isChecked();
+    
+    await firstToggleSlider.click();
     await page.waitForTimeout(300);
+    
+    const afterChecked = await firstToggleInput.isChecked();
+    expect(afterChecked).not.toBe(initialChecked);
 
     await page.getByRole('button', { name: '🔌 数据源' }).click();
     await page.waitForTimeout(500);

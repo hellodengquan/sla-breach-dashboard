@@ -202,3 +202,53 @@ export const users = [
   { id: 'user-4', name: '赵六', email: 'zhaoliu@example.com', role: 'engineer', team: 'team-1', avatar: '👩‍💻' },
   { id: 'user-5', name: '钱七', email: 'qianqi@example.com', role: 'viewer', team: 'team-4', avatar: '👤' },
 ];
+
+export const alertRules = [
+  { id: 'alert-001', name: 'SLA 违约率超标', severity: 'critical', metric: 'breach_rate', threshold: 10, operator: '>', enabled: true, silenced: false, createdAt: '2026-06-01' },
+  { id: 'alert-002', name: '响应时间超时', severity: 'high', metric: 'avg_response_time', threshold: 30, operator: '>', enabled: true, silenced: false, createdAt: '2026-06-02' },
+  { id: 'alert-003', name: '工单积压预警', severity: 'warning', metric: 'pending_tickets', threshold: 200, operator: '>', enabled: true, silenced: true, silencedBy: 'user-3', silencedAt: '2026-06-14', silencedReason: '系统升级维护', silencedUntil: '2026-06-16' },
+  { id: 'alert-004', name: '错误预算耗尽警告', severity: 'high', metric: 'error_budget_remaining', threshold: 20, operator: '<', enabled: true, silenced: false, createdAt: '2026-06-05' },
+  { id: 'alert-005', name: '服务可用性下降', severity: 'critical', metric: 'availability', threshold: 99, operator: '<', enabled: true, silenced: false, createdAt: '2026-06-03' },
+  { id: 'alert-006', name: '数据库连接异常', severity: 'high', metric: 'db_connection_errors', threshold: 5, operator: '>', enabled: false, silenced: false, createdAt: '2026-06-10' },
+];
+
+export const activeAlerts = [
+  { id: 'active-001', ruleId: 'alert-001', ruleName: 'SLA 违约率超标', severity: 'critical', value: 12.5, triggeredAt: '2026-06-15 10:30:00', acknowledged: false, service: 'ticket-service' },
+  { id: 'active-002', ruleId: 'alert-004', ruleName: '错误预算耗尽警告', severity: 'high', value: 15.3, triggeredAt: '2026-06-15 09:15:00', acknowledged: true, acknowledgedBy: 'user-3', acknowledgedAt: '2026-06-15 09:20:00', service: 'ticket-service' },
+  { id: 'active-003', ruleId: 'alert-002', ruleName: '响应时间超时', severity: 'high', value: 45.2, triggeredAt: '2026-06-15 11:45:00', acknowledged: false, service: 'user-service' },
+];
+
+export const subscriptions = [
+  { id: 'sub-001', name: '每日 SLA 摘要', type: 'daily', channels: ['email'], recipients: ['zhangsan@example.com', 'lisi@example.com'], time: '09:00', enabled: true, reportType: 'summary', lastSent: '2026-06-15 09:00:00' },
+  { id: 'sub-002', name: 'SLO 实时告警推送', type: 'realtime', channels: ['email', 'webhook'], recipients: ['wangwu@example.com'], webhookUrl: 'https://hooks.example.com/slo-alert', enabled: true, reportType: 'alert', sloThreshold: 0.8 },
+  { id: 'sub-003', name: '周度运维周报', type: 'weekly', channels: ['email'], recipients: ['all@example.com'], time: '10:00', weekday: 1, enabled: true, reportType: 'full', lastSent: '2026-06-09 10:00:00' },
+  { id: 'sub-004', name: '月度管理报告', type: 'monthly', channels: ['email'], recipients: ['management@example.com'], time: '08:00', dayOfMonth: 1, enabled: false, reportType: 'full' },
+  { id: 'sub-005', name: '错误预算耗尽预警', type: 'budget_alert', channels: ['email', 'webhook'], recipients: ['oncall@example.com'], webhookUrl: 'https://hooks.example.com/budget-alert', enabled: true, reportType: 'alert', budgetThreshold: 0.2 },
+];
+
+export const metricsBackends = [
+  { id: 'prometheus', name: 'Prometheus', type: 'prometheus', status: 'active', url: 'http://prometheus.internal:9090', description: '主要指标存储后端', lastSync: '2026-06-15 13:00:00' },
+  { id: 'datadog', name: 'Datadog', type: 'datadog', status: 'active', url: 'https://api.datadoghq.com', apiKey: '*********abc123', description: '云原生监控平台', lastSync: '2026-06-15 13:00:00' },
+  { id: 'grafana-cloud', name: 'Grafana Cloud', type: 'grafana', status: 'active', url: 'https://grafana.grafana.net', apiKey: '*********def456', description: '托管式 Grafana 实例', lastSync: '2026-06-15 12:55:00' },
+  { id: 'influxdb', name: 'InfluxDB', type: 'influxdb', status: 'inactive', url: 'http://influxdb.internal:8086', description: '时序数据库（备用）', lastSync: '2026-06-10 00:00:00' },
+];
+
+export const dashboardViews = [
+  { id: 'view-default', name: '默认视图', isDefault: true, layout: 'grid', widgets: ['stats', 'trend', 'group', 'tickets'], createdAt: '2026-06-01', createdBy: 'system' },
+  { id: 'view-ops', name: '运维视图', isDefault: false, layout: 'grid', widgets: ['stats', 'slo', 'dependencies', 'alerts'], createdAt: '2026-06-05', createdBy: 'user-3' },
+  { id: 'view-manager', name: '管理视图', isDefault: false, layout: 'list', widgets: ['stats', 'trend', 'slo', 'tickets', 'team'], createdAt: '2026-06-08', createdBy: 'user-2' },
+  { id: 'view-slo', name: 'SLO 详情视图', isDefault: false, layout: 'grid', widgets: ['slo', 'burnrate', 'trend'], createdAt: '2026-06-10', createdBy: 'user-1' },
+];
+
+export const availableWidgets = [
+  { id: 'stats', name: '统计卡片', icon: '📊', category: 'overview' },
+  { id: 'trend', name: '违约趋势图', icon: '📈', category: 'charts' },
+  { id: 'group', name: '客户分组图', icon: '🥧', category: 'charts' },
+  { id: 'slo', name: 'SLO 状态', icon: '🎯', category: 'slo' },
+  { id: 'burnrate', name: '错误预算燃尽', icon: '🔥', category: 'slo' },
+  { id: 'dependencies', name: '服务依赖图', icon: '🔗', category: 'infrastructure' },
+  { id: 'tickets', name: '工单列表', icon: '📋', category: 'tickets' },
+  { id: 'alerts', name: '告警列表', icon: '🔔', category: 'alerts' },
+  { id: 'team', name: '团队概览', icon: '👥', category: 'teams' },
+  { id: 'history', name: '历史回放', icon: '⏮️', category: 'history' },
+];

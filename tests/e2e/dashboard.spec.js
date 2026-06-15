@@ -427,4 +427,424 @@ test.describe('SLA 违约监控仪表盘 - 端到端测试', () => {
     await page.waitForTimeout(500);
     await expect(page.getByText('最近违约工单')).toBeVisible();
   });
+
+  test('31. 告警管理页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔔 告警管理' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('🔔 告警管理与 Silencing')).toBeVisible();
+
+    const alertStats = page.locator('.alert-stat-item');
+    await expect(alertStats).toHaveCount(4);
+
+    await expect(page.getByText('告警规则总数')).toBeVisible();
+    await expect(page.getByText('已启用')).toBeVisible();
+    await expect(page.getByText('已静默')).toBeVisible();
+    await expect(page.getByText('活动告警')).toBeVisible();
+  });
+
+  test('32. 告警规则与活动告警标签切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔔 告警管理' }).click();
+    await page.waitForTimeout(500);
+
+    const alertTabs = page.locator('.alert-tabs .tab-btn');
+    await expect(alertTabs).toHaveCount(2);
+
+    await page.getByRole('button', { name: '⚡ 活动告警' }).click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.active-alerts-list')).toBeVisible();
+
+    await page.getByRole('button', { name: '📋 告警规则' }).click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.alert-rules-list')).toBeVisible();
+  });
+
+  test('33. 告警规则列表展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔔 告警管理' }).click();
+    await page.waitForTimeout(500);
+
+    const alertRules = page.locator('.alert-rule-item');
+    await expect(alertRules).toHaveCount(6);
+
+    const severityBadges = page.locator('.severity-badge');
+    await expect(severityBadges.first()).toBeVisible();
+
+    await expect(page.getByText('SLA 违约率超标')).toBeVisible();
+    await expect(page.getByText('响应时间超时')).toBeVisible();
+  });
+
+  test('34. 告警 silencing 功能测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔔 告警管理' }).click();
+    await page.waitForTimeout(500);
+
+    const silenceButtons = page.getByRole('button', { name: '静默告警' });
+    const firstSilenceBtn = silenceButtons.first();
+    await expect(firstSilenceBtn).toBeVisible();
+
+    await firstSilenceBtn.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.modal-overlay')).toBeVisible();
+    await expect(page.getByText('静默告警规则')).toBeVisible();
+
+    const durationSelect = page.locator('.silence-modal .form-select');
+    await expect(durationSelect).toBeVisible();
+
+    const reasonInput = page.locator('.silence-modal .form-textarea');
+    await expect(reasonInput).toBeVisible();
+    await reasonInput.fill('系统维护升级');
+
+    await expect(page.getByRole('button', { name: '确认静默' })).toBeVisible();
+
+    await page.getByRole('button', { name: '取消' }).click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.modal-overlay')).not.toBeVisible();
+  });
+
+  test('35. 已静默告警标识与解除测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔔 告警管理' }).click();
+    await page.waitForTimeout(500);
+
+    const silencedBadge = page.locator('.silenced-badge');
+    await expect(silencedBadge).toBeVisible();
+
+    const unsilenceButtons = page.getByRole('button', { name: '解除静默' });
+    await expect(unsilenceButtons.first()).toBeVisible();
+  });
+
+  test('36. 订阅推送页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('📩 SLO 报表订阅推送')).toBeVisible();
+    await expect(page.getByRole('button', { name: '+ 新建订阅' })).toBeVisible();
+
+    const subStats = page.locator('.sub-stat-item');
+    await expect(subStats).toHaveCount(4);
+  });
+
+  test('37. 订阅列表展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+
+    const subscriptions = page.locator('.subscription-item');
+    await expect(subscriptions).toHaveCount(5);
+
+    const typeBadges = page.locator('.sub-type-badge');
+    await expect(typeBadges.first()).toBeVisible();
+
+    await expect(page.getByText('每日 SLA 摘要')).toBeVisible();
+    await expect(page.getByText('SLO 实时告警推送')).toBeVisible();
+  });
+
+  test('38. 订阅开关切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+
+    const toggleSwitches = page.locator('.toggle-switch input');
+    const firstSwitch = toggleSwitches.first();
+    
+    const initialChecked = await firstSwitch.isChecked();
+    
+    await firstSwitch.click();
+    
+    const afterChecked = await firstSwitch.isChecked();
+    expect(afterChecked).not.toBe(initialChecked);
+  });
+
+  test('39. 新建订阅弹窗测试', async ({ page }) => {
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole('button', { name: '+ 新建订阅' }).click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.modal-overlay')).toBeVisible();
+    await expect(page.getByText('新建订阅')).toBeVisible();
+
+    const nameInput = page.locator('.create-sub-modal .form-input').first();
+    await nameInput.fill('测试订阅');
+
+    const typeSelect = page.locator('.create-sub-modal .form-select').first();
+    await typeSelect.selectOption('weekly');
+
+    const reportTypeSelect = page.locator('.create-sub-modal .form-select').nth(1);
+    await reportTypeSelect.selectOption('full');
+
+    await expect(page.locator('.channel-options')).toBeVisible();
+    const channelOptions = page.locator('.channel-option');
+    await expect(channelOptions).toHaveCount(3);
+
+    const recipientInput = page.locator('.recipient-input-row .form-input').first();
+    await recipientInput.fill('test@example.com');
+
+    await expect(page.getByRole('button', { name: '创建订阅' })).toBeVisible();
+
+    await page.getByRole('button', { name: '取消' }).click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.modal-overlay')).not.toBeVisible();
+  });
+
+  test('40. 订阅渠道多选测试', async ({ page }) => {
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole('button', { name: '+ 新建订阅' }).click();
+    await page.waitForTimeout(300);
+
+    const emailOption = page.locator('.channel-option').first();
+    const webhookOption = page.locator('.channel-option').nth(1);
+
+    const initialEmailChecked = await emailOption.evaluate(el => el.querySelector('input').checked);
+    expect(initialEmailChecked).toBe(true);
+
+    await webhookOption.click();
+    
+    const webhookChecked = await webhookOption.evaluate(el => el.querySelector('input').checked);
+    expect(webhookChecked).toBe(true);
+
+    await page.getByRole('button', { name: '取消' }).click();
+  });
+
+  test('41. 多 Metrics Backend 页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('🔌 多 Metrics Backend 适配')).toBeVisible();
+    await expect(page.getByText(/当前:/)).toBeVisible();
+    await expect(page.getByText('Prometheus')).toBeVisible();
+  });
+
+  test('42. Metrics Backend 列表展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    const backendCards = page.locator('.backend-card');
+    await expect(backendCards).toHaveCount(4);
+
+    await expect(page.getByText('Prometheus')).toBeVisible();
+    await expect(page.getByText('Datadog')).toBeVisible();
+    await expect(page.getByText('Grafana Cloud')).toBeVisible();
+    await expect(page.getByText('InfluxDB')).toBeVisible();
+  });
+
+  test('43. 当前 Backend 标识测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    const currentBadge = page.locator('.current-badge');
+    await expect(currentBadge).toHaveCount(1);
+    await expect(currentBadge).toContainText('当前');
+
+    const activeCard = page.locator('.backend-card.active');
+    await expect(activeCard).toHaveCount(1);
+  });
+
+  test('44. 切换 Metrics Backend 测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    const datadogCard = page.locator('.backend-card').filter({ hasText: 'Datadog' });
+    const switchButton = datadogCard.getByRole('button', { name: '切换' });
+    
+    await expect(switchButton).toBeVisible();
+    
+    await switchButton.click();
+    await page.waitForTimeout(1000);
+
+    const currentBadge = page.locator('.current-badge');
+    const parentCard = currentBadge.locator('..').locator('..');
+    await expect(parentCard).toContainText('Datadog');
+  });
+
+  test('45. Metrics Backend 连接测试功能', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    const firstCard = page.locator('.backend-card').first();
+    const testButton = firstCard.getByRole('button', { name: '测试连接' });
+    
+    await expect(testButton).toBeVisible();
+    
+    await testButton.click();
+    
+    await page.waitForTimeout(1500);
+    
+    const testResult = firstCard.locator('.test-result');
+    await expect(testResult).toBeVisible();
+  });
+
+  test('46. Metrics Backend 状态标识测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    const activeStatus = page.locator('.backend-status.status-active');
+    await expect(activeStatus).toHaveCount(3);
+
+    const inactiveStatus = page.locator('.backend-status.status-inactive');
+    await expect(inactiveStatus).toHaveCount(1);
+  });
+
+  test('47. 自定义 Dashboard 视图页面加载测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('🎛️ 自定义 Dashboard 视图')).toBeVisible();
+    await expect(page.getByRole('button', { name: '✏️ 编辑视图' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '+ 新建视图' })).toBeVisible();
+  });
+
+  test('48. 视图标签页切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    const viewTabs = page.locator('.view-tab');
+    await expect(viewTabs).toHaveCount(4);
+
+    await expect(page.locator('.view-tab.active')).toBeVisible();
+
+    const opsView = page.getByRole('button', { name: /运维视图/ });
+    await opsView.click();
+    await page.waitForTimeout(300);
+    
+    const activeTab = page.locator('.view-tab.active');
+    await expect(activeTab).toContainText('运维视图');
+  });
+
+  test('49. 视图编辑模式切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    const editButton = page.getByRole('button', { name: '✏️ 编辑视图' });
+    await editButton.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.widget-picker')).toBeVisible();
+    await expect(page.getByText('选择要显示的组件')).toBeVisible();
+
+    const doneButton = page.getByRole('button', { name: '✓ 完成编辑' });
+    await expect(doneButton).toBeVisible();
+    await doneButton.click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.view-preview')).toBeVisible();
+  });
+
+  test('50. 新建视图弹窗测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole('button', { name: '+ 新建视图' }).click();
+    await page.waitForTimeout(300);
+
+    await expect(page.locator('.modal-overlay')).toBeVisible();
+    await expect(page.getByText('新建 Dashboard 视图')).toBeVisible();
+
+    const nameInput = page.locator('.modal-content .form-input');
+    await nameInput.fill('我的自定义视图');
+
+    const createButton = page.getByRole('button', { name: '创建' });
+    await expect(createButton).toBeVisible();
+
+    await createButton.click();
+    await page.waitForTimeout(500);
+
+    const viewTabs = page.locator('.view-tab');
+    const countAfter = await viewTabs.count();
+    expect(countAfter).toBe(5);
+  });
+
+  test('51. 视图管理列表测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('📋 视图管理')).toBeVisible();
+
+    const viewItems = page.locator('.view-item-manage');
+    await expect(viewItems).toHaveCount(4);
+
+    const defaultBadge = page.locator('.default-badge');
+    await expect(defaultBadge).toHaveCount(1);
+    await expect(defaultBadge).toContainText('默认');
+  });
+
+  test('52. 组件分类展示测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole('button', { name: '✏️ 编辑视图' }).click();
+    await page.waitForTimeout(300);
+
+    const categories = page.locator('.widget-category');
+    await expect(categories).toHaveCount(8);
+
+    const widgetOptions = page.locator('.widget-option');
+    await expect(widgetOptions).toHaveCount(10);
+  });
+
+  test('53. 组件选择切换测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+
+    await page.getByRole('button', { name: '✏️ 编辑视图' }).click();
+    await page.waitForTimeout(300);
+
+    const firstWidget = page.locator('.widget-option').first();
+    const initialSelected = await firstWidget.evaluate(el => el.classList.contains('selected'));
+
+    await firstWidget.click();
+    
+    const afterSelected = await firstWidget.evaluate(el => el.classList.contains('selected'));
+    expect(afterSelected).not.toBe(initialSelected);
+  });
+
+  test('54. 完整新功能导航流程测试 - 从告警到视图', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'SLA 违约监控仪表盘' })).toBeVisible();
+
+    await page.getByRole('button', { name: '🔔 告警管理' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('🔔 告警管理与 Silencing')).toBeVisible();
+
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('📩 SLO 报表订阅推送')).toBeVisible();
+
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('🔌 多 Metrics Backend 适配')).toBeVisible();
+
+    await page.getByRole('button', { name: '🎛️ 视图管理' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('🎛️ 自定义 Dashboard 视图')).toBeVisible();
+
+    await page.getByRole('button', { name: '📊 总览' }).click();
+    await page.waitForTimeout(500);
+    await expect(page.getByText('累计违约数量')).toBeVisible();
+  });
+
+  test('55. 订阅与多 backend 联动验证测试', async ({ page }) => {
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+
+    const datadogCard = page.locator('.backend-card').filter({ hasText: 'Datadog' });
+    await datadogCard.getByRole('button', { name: '切换' }).click();
+    await page.waitForTimeout(1000);
+
+    await page.getByRole('button', { name: '📩 订阅推送' }).click();
+    await page.waitForTimeout(500);
+
+    const subscriptions = page.locator('.subscription-item');
+    await expect(subscriptions).toHaveCount(5);
+
+    const firstToggle = page.locator('.toggle-switch input').first();
+    await firstToggle.click();
+    await page.waitForTimeout(300);
+
+    await page.getByRole('button', { name: '🔌 数据源' }).click();
+    await page.waitForTimeout(500);
+    
+    const currentBadge = page.locator('.current-badge');
+    const parentCard = currentBadge.locator('..').locator('..');
+    await expect(parentCard).toContainText('Datadog');
+  });
 });

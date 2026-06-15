@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { MetricsBackendProvider } from './context/MetricsBackendContext';
 import StatCard from './components/StatCard';
 import CustomerGroupChart from './components/CustomerGroupChart';
 import TrendChart from './components/TrendChart';
@@ -9,6 +10,10 @@ import ServiceDependencyGraph from './components/ServiceDependencyGraph';
 import HistoryPlayback from './components/HistoryPlayback';
 import PDFReport from './components/PDFReport';
 import TeamPermissions from './components/TeamPermissions';
+import AlertSilencing from './components/AlertSilencing';
+import SLOSubscription from './components/SLOSubscription';
+import MetricsBackendManager from './components/MetricsBackendManager';
+import CustomDashboardView from './components/CustomDashboardView';
 import { 
   statisticsData, 
   customerGroupData, 
@@ -21,7 +26,12 @@ import {
   serviceMetrics,
   historicalSnapshots,
   generateHistoricalData,
-  teams
+  teams,
+  alertRules,
+  activeAlerts,
+  subscriptions,
+  dashboardViews,
+  availableWidgets,
 } from './data/mockData';
 
 function DashboardContent() {
@@ -49,8 +59,12 @@ function DashboardContent() {
   const tabs = [
     { id: 'overview', name: '📊 总览', permission: 'view_dashboard' },
     { id: 'slo', name: '🎯 SLO & 错误预算', permission: 'view_dashboard' },
+    { id: 'alerts', name: '🔔 告警管理', permission: 'configure_alerts' },
+    { id: 'subscriptions', name: '📩 订阅推送', permission: 'export_reports' },
     { id: 'dependencies', name: '🔗 服务依赖', permission: 'view_dependencies' },
     { id: 'history', name: '⏮️ 历史回放', permission: 'replay_history' },
+    { id: 'backends', name: '🔌 数据源', permission: 'view_all' },
+    { id: 'views', name: '🎛️ 视图管理', permission: 'view_dashboard' },
     { id: 'teams', name: '👥 团队权限', permission: 'view_teams' },
     { id: 'export', name: '📄 导出报告', permission: 'export_reports' },
   ].filter(tab => hasPermission(tab.permission));
@@ -157,6 +171,12 @@ function DashboardContent() {
       case 'slo':
         return <SLOBudget sloData={sloData} burnRateData={burnRateData} />;
       
+      case 'alerts':
+        return <AlertSilencing alertRules={alertRules} activeAlerts={activeAlerts} />;
+      
+      case 'subscriptions':
+        return <SLOSubscription subscriptions={subscriptions} />;
+      
       case 'dependencies':
         return (
           <ServiceDependencyGraph 
@@ -173,6 +193,12 @@ function DashboardContent() {
             generateHistoricalData={generateHistoricalData}
           />
         );
+      
+      case 'backends':
+        return <MetricsBackendManager />;
+      
+      case 'views':
+        return <CustomDashboardView views={dashboardViews} availableWidgets={availableWidgets} />;
       
       case 'teams':
         return <TeamPermissions teams={teams} />;
@@ -241,7 +267,9 @@ function DashboardContent() {
 function App() {
   return (
     <AuthProvider>
-      <DashboardContent />
+      <MetricsBackendProvider>
+        <DashboardContent />
+      </MetricsBackendProvider>
     </AuthProvider>
   );
 }

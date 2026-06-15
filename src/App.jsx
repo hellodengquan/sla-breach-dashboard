@@ -1,10 +1,33 @@
+import { useState } from 'react';
 import './App.css';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import StatCard from './components/StatCard';
 import CustomerGroupChart from './components/CustomerGroupChart';
 import TrendChart from './components/TrendChart';
-import { statisticsData, customerGroupData, trendData, recentTickets } from './data/mockData';
+import SLOBudget from './components/SLOBudget';
+import ServiceDependencyGraph from './components/ServiceDependencyGraph';
+import HistoryPlayback from './components/HistoryPlayback';
+import PDFReport from './components/PDFReport';
+import TeamPermissions from './components/TeamPermissions';
+import { 
+  statisticsData, 
+  customerGroupData, 
+  trendData, 
+  recentTickets,
+  sloData,
+  burnRateData,
+  serviceDependencyNodes,
+  serviceDependencyEdges,
+  serviceMetrics,
+  historicalSnapshots,
+  generateHistoricalData,
+  teams
+} from './data/mockData';
 
-function App() {
+function DashboardContent() {
+  const { currentUser, hasPermission, teamPermissions } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case '紧急': return '#FF4757';
@@ -23,109 +46,203 @@ function App() {
     }
   };
 
+  const tabs = [
+    { id: 'overview', name: '📊 总览', permission: 'view_dashboard' },
+    { id: 'slo', name: '🎯 SLO & 错误预算', permission: 'view_dashboard' },
+    { id: 'dependencies', name: '🔗 服务依赖', permission: 'view_dependencies' },
+    { id: 'history', name: '⏮️ 历史回放', permission: 'replay_history' },
+    { id: 'teams', name: '👥 团队权限', permission: 'view_teams' },
+    { id: 'export', name: '📄 导出报告', permission: 'export_reports' },
+  ].filter(tab => hasPermission(tab.permission));
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <>
+            <section className="stats-grid">
+              <StatCard
+                title="累计违约数量"
+                value={statisticsData.totalBreaches}
+                change={statisticsData.totalBreachesChange}
+                icon="📊"
+                color="#FF6B6B"
+              />
+              <StatCard
+                title="今日违约数量"
+                value={statisticsData.todayBreaches}
+                change={statisticsData.todayBreachesChange}
+                icon="⚠️"
+                color="#FFA502"
+              />
+              <StatCard
+                title="待处理违约"
+                value={statisticsData.pendingBreaches}
+                change={statisticsData.pendingBreachesChange}
+                icon="⏰"
+                color="#45B7D1"
+              />
+              <StatCard
+                title="整体违约率"
+                value={statisticsData.breachRate}
+                unit="%"
+                change={statisticsData.breachRateChange}
+                icon="📈"
+                color="#96CEB4"
+              />
+            </section>
+
+            <section className="charts-section">
+              <div className="chart-wrapper trend-wrapper">
+                <TrendChart data={trendData} />
+              </div>
+              <div className="chart-wrapper group-wrapper">
+                <CustomerGroupChart data={customerGroupData} />
+              </div>
+            </section>
+
+            {hasPermission('view_tickets') && (
+              <section className="tickets-section">
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <h3 className="chart-title">最近违约工单</h3>
+                    <span className="chart-subtitle">共 {recentTickets.length} 条记录</span>
+                  </div>
+                  <div className="table-container">
+                    <table className="tickets-table">
+                      <thead>
+                        <tr>
+                          <th>工单编号</th>
+                          <th>客户名称</th>
+                          <th>问题描述</th>
+                          <th>优先级</th>
+                          <th>超时时间</th>
+                          <th>状态</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentTickets.map((ticket) => (
+                          <tr key={ticket.id}>
+                            <td className="ticket-id">{ticket.id}</td>
+                            <td className="ticket-customer">{ticket.customer}</td>
+                            <td className="ticket-subject">{ticket.subject}</td>
+                            <td>
+                              <span 
+                                className="priority-badge" 
+                                style={{ backgroundColor: `${getPriorityColor(ticket.priority)}20`, color: getPriorityColor(ticket.priority) }}
+                              >
+                                {ticket.priority}
+                              </span>
+                            </td>
+                            <td className="breach-time">{ticket.breachTime}</td>
+                            <td>
+                              <span 
+                                className="status-badge"
+                                style={{ backgroundColor: `${getStatusColor(ticket.status)}20`, color: getStatusColor(ticket.status) }}
+                              >
+                                {ticket.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
+          </>
+        );
+      
+      case 'slo':
+        return <SLOBudget sloData={sloData} burnRateData={burnRateData} />;
+      
+      case 'dependencies':
+        return (
+          <ServiceDependencyGraph 
+            nodes={serviceDependencyNodes} 
+            edges={serviceDependencyEdges}
+            serviceMetrics={serviceMetrics}
+          />
+        );
+      
+      case 'history':
+        return (
+          <HistoryPlayback 
+            snapshots={historicalSnapshots}
+            generateHistoricalData={generateHistoricalData}
+          />
+        );
+      
+      case 'teams':
+        return <TeamPermissions teams={teams} />;
+      
+      case 'export':
+        return (
+          <PDFReport
+            statisticsData={statisticsData}
+            sloData={sloData}
+            recentTickets={recentTickets}
+            customerGroupData={customerGroupData}
+          />
+        );
+      
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="dashboard">
+    <div className="dashboard" id="dashboard-content">
       <header className="dashboard-header">
         <div>
           <h1 className="dashboard-title">SLA 违约监控仪表盘</h1>
-          <p className="dashboard-subtitle">实时监控客服工单 SLA 超时情况 · 更新于 {new Date().toLocaleString('zh-CN')}</p>
+          <p className="dashboard-subtitle">
+            实时监控客服工单 SLA 超时情况 · 更新于 {new Date().toLocaleString('zh-CN')}
+            {' · '}
+            当前用户: <strong>{currentUser.name}</strong>
+            <span className="role-indicator">({teamPermissions[currentUser.role]?.name || currentUser.role})</span>
+          </p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-primary">导出报告</button>
-          <button className="btn btn-secondary">刷新数据</button>
+          {hasPermission('export_reports') && (
+            <button 
+              className="btn btn-primary"
+              onClick={() => setActiveTab('export')}
+            >
+              导出报告
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={() => window.location.reload()}>
+            刷新数据
+          </button>
         </div>
       </header>
 
-      <section className="stats-grid">
-        <StatCard
-          title="累计违约数量"
-          value={statisticsData.totalBreaches}
-          change={statisticsData.totalBreachesChange}
-          icon="📊"
-          color="#FF6B6B"
-        />
-        <StatCard
-          title="今日违约数量"
-          value={statisticsData.todayBreaches}
-          change={statisticsData.todayBreachesChange}
-          icon="⚠️"
-          color="#FFA502"
-        />
-        <StatCard
-          title="待处理违约"
-          value={statisticsData.pendingBreaches}
-          change={statisticsData.pendingBreachesChange}
-          icon="⏰"
-          color="#45B7D1"
-        />
-        <StatCard
-          title="整体违约率"
-          value={statisticsData.breachRate}
-          unit="%"
-          change={statisticsData.breachRateChange}
-          icon="📈"
-          color="#96CEB4"
-        />
-      </section>
+      <nav className="dashboard-nav">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.name}
+          </button>
+        ))}
+      </nav>
 
-      <section className="charts-section">
-        <div className="chart-wrapper trend-wrapper">
-          <TrendChart data={trendData} />
-        </div>
-        <div className="chart-wrapper group-wrapper">
-          <CustomerGroupChart data={customerGroupData} />
-        </div>
-      </section>
-
-      <section className="tickets-section">
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3 className="chart-title">最近违约工单</h3>
-            <span className="chart-subtitle">共 {recentTickets.length} 条记录</span>
-          </div>
-          <div className="table-container">
-            <table className="tickets-table">
-              <thead>
-                <tr>
-                  <th>工单编号</th>
-                  <th>客户名称</th>
-                  <th>问题描述</th>
-                  <th>优先级</th>
-                  <th>超时时间</th>
-                  <th>状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTickets.map((ticket) => (
-                  <tr key={ticket.id}>
-                    <td className="ticket-id">{ticket.id}</td>
-                    <td className="ticket-customer">{ticket.customer}</td>
-                    <td className="ticket-subject">{ticket.subject}</td>
-                    <td>
-                      <span 
-                        className="priority-badge" 
-                        style={{ backgroundColor: `${getPriorityColor(ticket.priority)}20`, color: getPriorityColor(ticket.priority) }}
-                      >
-                        {ticket.priority}
-                      </span>
-                    </td>
-                    <td className="breach-time">{ticket.breachTime}</td>
-                    <td>
-                      <span 
-                        className="status-badge"
-                        style={{ backgroundColor: `${getStatusColor(ticket.status)}20`, color: getStatusColor(ticket.status) }}
-                      >
-                        {ticket.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+      <main className="dashboard-main">
+        {renderContent()}
+      </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <DashboardContent />
+    </AuthProvider>
   );
 }
 
